@@ -1,139 +1,83 @@
-const taskForm = document.getElementById("task-form");
-const confirmCloseDialog = document.getElementById("confirm-close-dialog");
-const openTaskFormBtn = document.getElementById("open-task-form-btn");
-const closeTaskFormBtn = document.getElementById("close-task-form-btn");
-const addOrUpdateTaskBtn = document.getElementById("add-or-update-task-btn");
-const cancelBtn = document.getElementById("cancel-btn");
-const discardBtn = document.getElementById("discard-btn");
-const tasksContainer = document.getElementById("tasks-container");
-const titleInput = document.getElementById("title-input");
-const dateInput = document.getElementById("date-input");
-const descriptionInput = document.getElementById("description-input");
+function getRandomComputerResult() {
+  const options = ["Rock", "Paper", "Scissors"];
+  const randomIndex = Math.floor(Math.random() * options.length);
+  return options[randomIndex];
+}
 
-const taskData = JSON.parse(localStorage.getItem("data")) || [];
-let currentTask = {};
+function hasPlayerWonTheRound(player, computer) {
+  return (
+    (player === "Rock" && computer === "Scissors") ||
+    (player === "Scissors" && computer === "Paper") ||
+    (player === "Paper" && computer === "Rock")
+  );
+}
 
-const addOrUpdateTask = () => {
-  const dataArrIndex = taskData.findIndex((item) => item.id === currentTask.id);
-  const taskObj = {
-    id: `${titleInput.value.toLowerCase().split(" ").join("-")}-${Date.now()}`,
-    title: titleInput.value,
-    date: dateInput.value,
-    description: descriptionInput.value,
-  };
+let playerScore = 0;
+let computerScore = 0;
 
-  if (dataArrIndex === -1) {
-    taskData.unshift(taskObj);
+function getRoundResults(userOption) {
+  const computerResult = getRandomComputerResult();
+
+  if (hasPlayerWonTheRound(userOption, computerResult)) {
+    playerScore++;
+    return `Player wins! ${userOption} beats ${computerResult}`;
+  } else if (computerResult === userOption) {
+    return `It's a tie! Both chose ${userOption}`;
   } else {
-    taskData[dataArrIndex] = taskObj;
+    computerScore++;
+    return `Computer wins! ${computerResult} beats ${userOption}`;
+  }
+}
+
+const playerScoreSpanElement = document.getElementById("player-score");
+const computerScoreSpanElement = document.getElementById("computer-score");
+const roundResultsMsg = document.getElementById("results-msg");
+const winnerMsgElement = document.getElementById("winner-msg");
+const optionsContainer = document.querySelector(".options-container");
+const resetGameBtn = document.getElementById("reset-game-btn");
+
+function showResults(userOption) {
+  roundResultsMsg.innerText = getRoundResults(userOption);
+  computerScoreSpanElement.innerText = computerScore;
+  playerScoreSpanElement.innerText = playerScore;
+
+  if (playerScore === 3 || computerScore === 3) {
+    winnerMsgElement.innerText = `${
+      playerScore === 3 ? "Player" : "Computer"
+    } has won the game!`;
+
+    resetGameBtn.style.display = "block";
+    optionsContainer.style.display = "none";
   }
 
-  localStorage.setItem("data", JSON.stringify(taskData));
-  updateTaskContainer()
-  reset()
+};
+function resetGame() {
+playerScore = 0;
+computerScore = 0;
+playerScoreSpanElement.innerHTML = playerScore;
+computerScoreSpanElement.innerHTML = computerScore;
+
+    resetGameBtn.style.display = "none";
+    optionsContainer.style.display = "block";
+
+    winnerMsgElement.innerHTML = "";
+    roundResultElement.innerHTML = "";
 };
 
-const updateTaskContainer = () => {
-  tasksContainer.innerHTML = "";
+resetGameBtn.addEventListener("click", resetGame);
 
-  taskData.forEach(
-    ({ id, title, date, description }) => {
-        (tasksContainer.innerHTML += `
-        <div class="task" id="${id}">
-          <p><strong>Title:</strong> ${title}</p>
-          <p><strong>Date:</strong> ${date}</p>
-          <p><strong>Description:</strong> ${description}</p>
-          <button onclick="editTask(this)" type="button" class="btn">Edit</button>
-          <button onclick="deleteTask(this)" type="button" class="btn">Delete</button> 
-        </div>
-      `)
-    }
-  );
-};
+const rockBtn = document.getElementById("rock-btn");
+const paperBtn = document.getElementById("paper-btn");
+const scissorsBtn = document.getElementById("scissors-btn");
 
-
-const deleteTask = (buttonEl) => {
-  const dataArrIndex = taskData.findIndex(
-    (item) => item.id === buttonEl.parentElement.id
-  );
-
-  buttonEl.parentElement.remove();
-  taskData.splice(dataArrIndex, 1);
-  localStorage.setItem("data", JSON.stringify(taskData));
-}
-
-const editTask = (buttonEl) => {
-    const dataArrIndex = taskData.findIndex(
-    (item) => item.id === buttonEl.parentElement.id
-  );
-
-  currentTask = taskData[dataArrIndex];
-
-  titleInput.value = currentTask.title;
-  dateInput.value = currentTask.date;
-  descriptionInput.value = currentTask.description;
-
-  addOrUpdateTaskBtn.innerText = "Update Task";
-
-  taskForm.classList.toggle("hidden");  
-}
-
-const reset = () => {
-  addOrUpdateTaskBtn.innerText = "Add Task";
-  titleInput.value = "";
-  dateInput.value = "";
-  descriptionInput.value = "";
-  taskForm.classList.toggle("hidden");
-  currentTask = {};
-}
-
-if (taskData.length) {
-  updateTaskContainer();
-}
-
-//step 1
-openTaskFormBtn.addEventListener("click", () =>
-  taskForm.classList.toggle("hidden")
-);
-
-//step 2
-closeTaskFormBtn.addEventListener("click", () => {
-  const formInputsContainValues = titleInput.value || dateInput.value || descriptionInput.value;
-  const formInputValuesUpdated = titleInput.value !== currentTask.title || dateInput.value !== currentTask.date || descriptionInput.value !== currentTask.description;
-
-  if (formInputsContainValues && formInputValuesUpdated) {
-    confirmCloseDialog.showModal();
-  } else {
-    reset();
-  }
+rockBtn.addEventListener("click", function () {
+  showResults("Rock");
 });
 
-cancelBtn.addEventListener("click", () => confirmCloseDialog.close());
-
-discardBtn.addEventListener("click", () => {
-  confirmCloseDialog.close();
-  reset()
+paperBtn.addEventListener("click", function () {
+  showResults("Paper");
 });
 
-taskForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  addOrUpdateTask();
+scissorsBtn.addEventListener("click", function () {
+  showResults("Scissors");
 });
-
-//local storage implementation
-/*const myTaskArr = [
-  { task: "Walk the Dog", date: "22-04-2022" },
-  { task: "Read some books", date: "02-11-2023" },
-  { task: "Watch football", date: "10-08-2021" },
-];
-
-localStorage.setItem("data", JSON.stringify(myTaskArr));
-
-localStorage.clear();
-
-const getTaskArr = localStorage.getItem("data")
-console.log(getTaskArr)
-
-const getTaskArrObj = JSON.parse(localStorage.getItem("data"));
-console.log(getTaskArrObj); */
